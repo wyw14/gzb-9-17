@@ -3,6 +3,7 @@ const path = require('path');
 
 const ITEMS_FILE = path.join(__dirname, 'data', 'items.json');
 const EXCHANGES_FILE = path.join(__dirname, 'data', 'exchanges.json');
+const GUESSES_FILE = path.join(__dirname, 'data', 'guesses.json');
 
 function readItems() {
   try {
@@ -30,9 +31,24 @@ function writeExchanges(exchanges) {
   fs.writeFileSync(EXCHANGES_FILE, JSON.stringify(exchanges, null, 2), 'utf-8');
 }
 
+function readGuesses() {
+  try {
+    const data = fs.readFileSync(GUESSES_FILE, 'utf-8');
+    return JSON.parse(data);
+  } catch (err) {
+    return [];
+  }
+}
+
+function writeGuesses(guesses) {
+  fs.writeFileSync(GUESSES_FILE, JSON.stringify(guesses, null, 2), 'utf-8');
+}
+
 module.exports = {
   readItems,
   writeItems,
   readExchanges,
-  writeExchanges
+  writeExchanges,
+  readGuesses,
+  writeGuesses
 };

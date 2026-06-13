@@ -41,3 +41,15 @@ export function createExchange(myItemId, targetItemId) {
 export function getMyExchanges(userId) {
   return api.get('/exchanges/my', { params: { userId } }).then(res => res.data)
 }
+
+export function submitGuess(itemId, userId, userName, content) {
+  return api.post('/guesses', { itemId, userId, userName, content }).then(res => res.data)
+}
+
+export function getGuessDistribution(itemId, userId) {
+  return api.get(`/guesses/${itemId}`, { params: { userId } }).then(res => res.data)
+}
+
+export function getMyGuess(itemId, userId) {
+  return api.get(`/guesses/${itemId}/my`, { params: { userId } }).then(res => res.data)
+}

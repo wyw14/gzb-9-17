@@ -5,7 +5,7 @@ const path = require('path');
 const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
 const sharp = require('sharp');
-const { readItems, writeItems, readExchanges, writeExchanges } = require('./storage');
+const { readItems, writeItems, readExchanges, writeExchanges, readGuesses, writeGuesses } = require('./storage');
 
 const app = express();
 const PORT = 3449;
@@ -414,6 +414,96 @@ app.get('/uploads/:filename', async (req, res) => {
     console.error('动态生成模糊图失败:', err);
     return res.redirect(PLACEHOLDER_IMAGE);
   }
+});
+
+app.post('/api/guesses', (req, res) => {
+  const { itemId, userId, userName, content } = req.body;
+
+  if (!itemId || !userId || !content) {
+    return res.status(400).json({ error: '缺少必要字段' });
+  }
+
+  const items = readItems();
+  const item = items.find(i => i.id === itemId);
+  if (!item) {
+    return res.status(404).json({ error: '物品不存在' });
+  }
+
+  if (item.ownerId === userId) {
+    return res.status(403).json({ error: '不能猜测自己的物品' });
+  }
+
+  const exchanges = readExchanges();
+  const alreadyExchanged = exchanges.find(e =>
+    (e.item1Id === itemId || e.item2Id === itemId) &&
+    (e.item1Owner === userId || e.item2Owner === userId) &&
+    e.status === 'completed'
+  );
+  if (alreadyExchanged) {
+    return res.status(403).json({ error: '已交换的物品无需猜测' });
+  }
+
+  const guesses = readGuesses();
+  const existing = guesses.find(g => g.itemId === itemId && g.userId === userId);
+  if (existing) {
+    return res.status(400).json({ error: '你已经猜过了' });
+  }
+
+  const newGuess = {
+    id: uuidv4(),
+    itemId,
+    userId,
+    userName: userName || '匿名用户',
+    content: content.trim(),
+    createdAt: new Date().toISOString()
+  };
+
+  guesses.push(newGuess);
+  writeGuesses(guesses);
+
+  res.status(201).json(newGuess);
+});
+
+app.get('/api/guesses/:itemId', (req, res) => {
+  const { itemId } = req.params;
+  const { userId } = req.query;
+
+  const guesses = readGuesses();
+  const itemGuesses = guesses.filter(g => g.itemId === itemId);
+
+  const distribution = {};
+  itemGuesses.forEach(g => {
+    const key = g.content;
+    if (!distribution[key]) {
+      distribution[key] = { content: key, count: 0, guessers: [] };
+    }
+    distribution[key].count++;
+    distribution[key].guessers.push({ userName: g.userName, isMe: g.userId === userId });
+  });
+
+  const sortedDistribution = Object.values(distribution).sort((a, b) => b.count - a.count);
+
+  const myGuess = userId ? itemGuesses.find(g => g.userId === userId) : null;
+
+  res.json({
+    totalGuesses: itemGuesses.length,
+    distribution: sortedDistribution,
+    myGuess: myGuess ? { id: myGuess.id, content: myGuess.content, createdAt: myGuess.createdAt } : null
+  });
+});
+
+app.get('/api/guesses/:itemId/my', (req, res) => {
+  const { itemId } = req.params;
+  const { userId } = req.query;
+
+  if (!userId) {
+    return res.status(400).json({ error: '缺少用户ID' });
+  }
+
+  const guesses = readGuesses();
+  const myGuess = guesses.find(g => g.itemId === itemId && g.userId === userId);
+
+  res.json(myGuess || null);
 });
 
 app.listen(PORT, () => {

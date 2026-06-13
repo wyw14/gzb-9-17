@@ -82,6 +82,125 @@
           </div>
         </div>
 
+        <div v-if="!isOwner && !item.revealInfo" class="card" style="background:linear-gradient(135deg,#fef9f0,#fff0f5);margin-bottom:20px;border:1px solid #f0d0a0;">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+            <span style="font-size:22px;">🔮</span>
+            <h4 style="margin:0;color:#d4544a;">猜猜盒里是什么</h4>
+          </div>
+          <p style="color:#888;font-size:13px;margin-bottom:12px;">
+            根据神秘标签和模糊图片，猜猜这个盲盒里到底是什么？每人只能猜一次哦！
+          </p>
+
+          <div v-if="guessData.myGuess" style="background:white;border-radius:10px;padding:12px;margin-bottom:12px;">
+            <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
+              <span style="font-size:14px;">✅</span>
+              <span style="color:#666;font-size:13px;">你已提交猜测：</span>
+            </div>
+            <p style="color:#d4544a;font-weight:600;font-size:16px;margin:0;">{{ guessData.myGuess.content }}</p>
+          </div>
+
+          <div v-else>
+            <div style="display:flex;gap:8px;">
+              <input
+                v-model="guessContent"
+                placeholder="输入你的猜测..."
+                style="flex:1;"
+                @keyup.enter="handleSubmitGuess"
+              />
+              <button
+                class="btn btn-primary"
+                :disabled="!guessContent.trim() || submittingGuess"
+                @click="handleSubmitGuess"
+                style="white-space:nowrap;"
+              >
+                {{ submittingGuess ? '提交中...' : '提交猜测' }}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div v-if="guessData.totalGuesses > 0" class="card" style="background:#f8f9ff;margin-bottom:20px;border:1px solid #dde;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="font-size:18px;">📊</span>
+              <h4 style="margin:0;">猜测分布</h4>
+            </div>
+            <span style="color:#999;font-size:13px;">共 {{ guessData.totalGuesses }} 人参与</span>
+          </div>
+
+          <div v-for="(entry, index) in guessData.distribution" :key="entry.content"
+               style="margin-bottom:10px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+              <span style="font-weight:500;font-size:14px;">
+                {{ index + 1 }}. {{ entry.content }}
+                <span v-if="guessData.myGuess && entry.content === guessData.myGuess.content"
+                      style="color:#667eea;font-size:12px;margin-left:4px;">（我的猜测）</span>
+              </span>
+              <span style="color:#999;font-size:13px;">{{ entry.count }} 票</span>
+            </div>
+            <div style="background:#e8ecf3;border-radius:4px;height:8px;overflow:hidden;">
+              <div :style="guessBarStyle(entry.count, guessData.totalGuesses)"></div>
+            </div>
+            <div style="margin-top:4px;display:flex;flex-wrap:wrap;gap:4px;">
+              <span v-for="g in entry.guessers" :key="g.userName"
+                    :style="g.isMe
+                      ? 'background:#667eea;color:white;font-size:11px;padding:2px 8px;border-radius:10px;'
+                      : 'background:#f0f0f0;color:#666;font-size:11px;padding:2px 8px;border-radius:10px;'">
+                {{ g.isMe ? '我' : g.userName }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div v-if="item.revealInfo && guessData.myGuess" class="card"
+             style="background:linear-gradient(135deg,#e8f5e9,#f1f8e9);margin-bottom:20px;border:1px solid #a5d6a7;">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+            <span style="font-size:22px;">🎉</span>
+            <h4 style="margin:0;color:#2e7d32;">答案揭晓</h4>
+          </div>
+          <div style="display:flex;gap:20px;align-items:stretch;">
+            <div style="flex:1;background:white;border-radius:10px;padding:14px;text-align:center;border:2px solid #667eea;">
+              <div style="color:#667eea;font-size:12px;margin-bottom:6px;">我的猜测</div>
+              <div style="font-weight:600;font-size:16px;color:#333;">{{ guessData.myGuess.content }}</div>
+            </div>
+            <div style="display:flex;align-items:center;font-size:20px;color:#aaa;">VS</div>
+            <div style="flex:1;background:white;border-radius:10px;padding:14px;text-align:center;border:2px solid #4caf50;">
+              <div style="color:#4caf50;font-size:12px;margin-bottom:6px;">真实答案</div>
+              <div style="font-weight:600;font-size:16px;color:#333;">{{ item.realName }}</div>
+            </div>
+          </div>
+          <div v-if="isGuessCorrect" style="margin-top:12px;text-align:center;">
+            <span style="background:#4caf50;color:white;padding:6px 16px;border-radius:20px;font-size:14px;font-weight:500;">
+              🎯 猜对了！太厉害了！
+            </span>
+          </div>
+          <div v-else style="margin-top:12px;text-align:center;">
+            <span style="background:#ff9800;color:white;padding:6px 16px;border-radius:20px;font-size:14px;font-weight:500;">
+              🤔 差一点点，下次加油！
+            </span>
+          </div>
+        </div>
+
+        <div v-if="isOwner && item.revealInfo && guessData.totalGuesses > 0" class="card"
+             style="background:linear-gradient(135deg,#e3f2fd,#e8eaf6);margin-bottom:20px;border:1px solid #90caf9;">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+            <span style="font-size:22px;">👁️</span>
+            <h4 style="margin:0;color:#1565c0;">大家猜了什么</h4>
+          </div>
+          <div style="background:white;border-radius:10px;padding:14px;margin-bottom:12px;text-align:center;border:2px solid #1565c0;">
+            <div style="color:#1565c0;font-size:12px;margin-bottom:6px;">真实答案</div>
+            <div style="font-weight:600;font-size:18px;color:#333;">{{ item.realName }}</div>
+          </div>
+          <p style="color:#666;font-size:13px;margin-bottom:10px;">猜测命中情况：</p>
+          <div v-for="entry in guessData.distribution" :key="'owner-' + entry.content"
+               style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+            <span v-if="isEntryCorrect(entry.content)" style="font-size:14px;">✅</span>
+            <span v-else style="font-size:14px;">❌</span>
+            <span style="font-weight:500;font-size:14px;flex:1;">{{ entry.content }}</span>
+            <span style="color:#999;font-size:13px;">{{ entry.count }} 人</span>
+          </div>
+        </div>
+
         <div v-if="item.status === 'available' && !isOwner">
           <div style="background:#eef2ff;padding:16px;border-radius:12px;margin-bottom:16px;">
             <h4 style="margin-bottom:12px;">选择你的物品进行交换</h4>
@@ -121,7 +240,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { getItemDetail, getMyItems, createExchange, appendAuth } from '../api/index.js'
+import { getItemDetail, getMyItems, createExchange, appendAuth, submitGuess, getGuessDistribution } from '../api/index.js'
 import { userStore } from '../store/user.js'
 
 const route = useRoute()
@@ -132,6 +251,14 @@ const myItems = ref([])
 const myItemsLoading = ref(true)
 const selectedMyItemId = ref('')
 const exchanging = ref(false)
+
+const guessContent = ref('')
+const submittingGuess = ref(false)
+const guessData = ref({
+  totalGuesses: 0,
+  distribution: [],
+  myGuess: null
+})
 
 const categories = {
   book: '书籍类',
@@ -146,12 +273,33 @@ const isOwner = computed(function() {
   return item.value && item.value.ownerId === userStore.user.id
 })
 
+const isGuessCorrect = computed(function() {
+  if (!guessData.value.myGuess || !item.value || !item.value.realName) return false
+  return guessData.value.myGuess.content.trim().toLowerCase() === item.value.realName.trim().toLowerCase()
+})
+
 const availableItems = computed(function() {
   return myItems.value.filter(function(i) { return i.status === 'available' })
 })
 
 function getCategoryName(key) {
   return categories[key] || key
+}
+
+function guessBarStyle(count, total) {
+  var percent = total > 0 ? (count / total * 100) : 0
+  return {
+    height: '100%',
+    borderRadius: '4px',
+    background: 'linear-gradient(90deg, #667eea, #764ba2)',
+    width: Math.max(percent, 3) + '%',
+    transition: 'width 0.5s ease'
+  }
+}
+
+function isEntryCorrect(content) {
+  if (!item.value || !item.value.realName) return false
+  return content.trim().toLowerCase() === item.value.realName.trim().toLowerCase()
 }
 
 async function loadItem() {
@@ -176,6 +324,28 @@ async function loadMyItems() {
   }
 }
 
+async function loadGuessData() {
+  try {
+    guessData.value = await getGuessDistribution(route.params.id, userStore.user.id)
+  } catch (e) {
+    console.error(e)
+  }
+}
+
+async function handleSubmitGuess() {
+  if (!guessContent.value.trim()) return
+  submittingGuess.value = true
+  try {
+    await submitGuess(route.params.id, userStore.user.id, userStore.user.name, guessContent.value.trim())
+    guessContent.value = ''
+    await loadGuessData()
+  } catch (e) {
+    alert('提交失败：' + (e.response && e.response.data ? e.response.data.error : e.message))
+  } finally {
+    submittingGuess.value = false
+  }
+}
+
 async function handleExchange() {
   if (!confirm('确定要交换吗？交换后双方的真实信息将互相公开。')) {
     return
@@ -185,6 +355,7 @@ async function handleExchange() {
     await createExchange(selectedMyItemId.value, route.params.id)
     alert('交换成功！双方的真实信息已互相公开，请通过联系方式联系对方完成交换。')
     loadItem()
+    loadGuessData()
   } catch (e) {
     alert('交换失败：' + (e.response && e.response.data ? e.response.data.error : e.message))
   } finally {
@@ -195,5 +366,6 @@ async function handleExchange() {
 onMounted(function() {
   loadItem()
   loadMyItems()
+  loadGuessData()
 })
 </script>
