@@ -82,7 +82,7 @@
           </div>
         </div>
 
-        <div v-if="!isOwner && !item.revealInfo" class="card" style="background:linear-gradient(135deg,#fef9f0,#fff0f5);margin-bottom:20px;border:1px solid #f0d0a0;">
+        <div v-if="!isOwner && item.status === 'available'" class="card" style="background:linear-gradient(135deg,#fef9f0,#fff0f5);margin-bottom:20px;border:1px solid #f0d0a0;">
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
             <span style="font-size:22px;">🔮</span>
             <h4 style="margin:0;color:#d4544a;">猜猜盒里是什么</h4>
@@ -97,6 +97,7 @@
               <span style="color:#666;font-size:13px;">你已提交猜测：</span>
             </div>
             <p style="color:#d4544a;font-weight:600;font-size:16px;margin:0;">{{ guessData.myGuess.content }}</p>
+            <p style="color:#999;font-size:12px;margin:8px 0 0 0;">交换成功后即可查看真实答案对比</p>
           </div>
 
           <div v-else>
@@ -117,6 +118,17 @@
               </button>
             </div>
           </div>
+        </div>
+
+        <div v-else-if="!isOwner && item.status === 'exchanged' && !guessData.myGuess" class="card"
+             style="background:#fafafa;margin-bottom:20px;border:1px dashed #ccc;">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+            <span style="font-size:20px;">⌛</span>
+            <h4 style="margin:0;color:#888;">物品已交换</h4>
+          </div>
+          <p style="color:#999;font-size:13px;margin:0;">
+            这个盲盒已经被交换啦，错过了猜测时机，下次早点来哦！
+          </p>
         </div>
 
         <div v-if="guessData.totalGuesses > 0" class="card" style="background:#f8f9ff;margin-bottom:20px;border:1px solid #dde;">

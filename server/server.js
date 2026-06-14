@@ -142,6 +142,31 @@ app.get('/api/items/:id', (req, res) => {
         }
       });
     }
+
+    return res.json({
+      id: item.id,
+      category: item.category,
+      mysteryTags: item.mysteryTags,
+      realName: item.realName,
+      description: item.description,
+      ownerName: item.ownerName,
+      image: item.image,
+      createdAt: item.createdAt,
+      status: item.status,
+      revealInfo: true,
+      exchange: {
+        id: relatedExchange.id,
+        otherItem: {
+          id: otherItem.id,
+          category: otherItem.category,
+          mysteryTags: otherItem.mysteryTags,
+          realName: otherItem.realName,
+          image: otherItem.image,
+          ownerName: otherItem.ownerName
+        },
+        status: relatedExchange.status
+      }
+    });
   }
 
   const isOwner = item.ownerId === userId;
@@ -433,14 +458,8 @@ app.post('/api/guesses', (req, res) => {
     return res.status(403).json({ error: '不能猜测自己的物品' });
   }
 
-  const exchanges = readExchanges();
-  const alreadyExchanged = exchanges.find(e =>
-    (e.item1Id === itemId || e.item2Id === itemId) &&
-    (e.item1Owner === userId || e.item2Owner === userId) &&
-    e.status === 'completed'
-  );
-  if (alreadyExchanged) {
-    return res.status(403).json({ error: '已交换的物品无需猜测' });
+  if (item.status === 'exchanged') {
+    return res.status(403).json({ error: '物品已交换，无法再猜测' });
   }
 
   const guesses = readGuesses();
